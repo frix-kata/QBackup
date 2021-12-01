@@ -52,14 +52,17 @@
     <Compile Include="Core\AnalyzedBackup.cs" />
     <Compile Include="Core\ArchivedBackup.cs" />
     <Compile Include="Core\ArchivedDir.cs" />
-    <Compile Include="Core\BackUp.cs" />
+    <Compile Include="ConsoleHelpers\BackUp.cs" />
     <Compile Include="Core\BackupDiff.cs" />
+    <Compile Include="ConsoleHelpers\BackUpOperation.cs" />
     <Compile Include="Core\BackupOrigin.cs" />
     <Compile Include="Core\Constants.cs" />
     <Compile Include="Core\Dir.cs" />
     <Compile Include="Core\DirType.cs" />
     <Compile Include="Core\File.cs" />
     <Compile Include="Core\IdGenerator.cs" />
+    <Compile Include="Core\MainTypes.cs" />
+    <Compile Include="Core\OperationTypes.cs" />
     <Compile Include="Logging\ILog.cs" />
     <Compile Include="Logging\LogConsole.cs" />
     <Compile Include="Logging\LogLines.cs" />
@@ -69,7 +72,6 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Core\QualifiedPath.cs" />
-    <Compile Include="Core\StringCipher.cs" />
     <Compile Include="Core\ThreadSafeAttribute.cs" />
     <Compile Include="Core\Utils.cs" />
     <Compile Include="Core\Validator.cs" />

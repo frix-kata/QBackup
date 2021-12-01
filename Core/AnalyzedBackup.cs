@@ -4,32 +4,20 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using QBackup.Logging;
 
 
 
-namespace QBackup
+namespace QBackup.Core
 {
 
+    /// <summary>
+    /// Object that supposed to represent directory that is meant to be backuped and the data we got from analyzing it.
+    /// </summary>
     public class AnalyzedBackup
     {
 
-        public List<File> Files;
-        public List<Dir> Dirs;
-
-        public QualifiedPath Root => TopParent.AbsolutePath;
-
-        /// <summary>
-        /// Top most dir that is still included in the backup.
-        /// </summary>
-        public Dir TopParent;
-
-        /// <summary>
-        /// Dir that the backup itself is located in. Parent of TopParent.
-        /// </summary>
-        public QualifiedPath LocatedIn;
-
-        public int FilesCount => Files.Count;
-        public int DirsCount => Dirs.Count;
+        #region Static
 
         public static AnalyzedBackup Create(QualifiedPath dir, bool look_for_ignore_rules, ILog log)
         {
@@ -38,16 +26,45 @@ namespace QBackup
             return res;
         }
 
+        #endregion
+
+        #region Fields
+
+        public List<File> Files { get; }
+        public List<Dir> Dirs { get; }
+
+        /// <summary>
+        ///     Top most dir that is still included in the backup.
+        /// </summary>
+        public Dir TopParent { get; private set; }
+
+        /// <summary>
+        ///     Dir that the backup itself is located in. Parent of TopParent.
+        /// </summary>
+        public QualifiedPath LocatedIn { get; private set; }
+
+        #endregion
+
+        #region Properties
+
+        public QualifiedPath Root => TopParent.AbsolutePath;
+
+        public int FilesCount => Files.Count;
+        public int DirsCount => Dirs.Count;
+
+        #endregion
+
+        #region Constructors
+
         private AnalyzedBackup()
         {
             Files = new List<File>();
             Dirs = new List<Dir>();
         }
 
-        public void MarkIgnored()
-        {
-            MarkIgnored(TopParent, new List<Match>());
-        }
+        #endregion
+
+        #region Methods
 
         private void AddFiles(Dir dir, List<Match> rules, ILog log)
         {
@@ -67,6 +84,7 @@ namespace QBackup
                         log.WriteLine(e.ToString());
                     }
                 }
+
                 var name = Path.GetFileName(filepath);
                 var f = File.Create(name, dir);
                 dir.Files.Add(f);
@@ -77,7 +95,38 @@ namespace QBackup
                 var file = dir.Files[i];
                 if (rules.Any(x => x.IsMatch(file))) dir.Files.RemoveAt(i);
             }
+
             Files.AddRange(dir.Files);
+        }
+
+        public QualifiedPath Compress(QualifiedPath backup_dir, string pass, int aes_key_size, ILog log)
+        {
+            log.WriteLine($"Compressing data in {Root.Path} into {backup_dir.Path}");
+            var res = GetDestinationDirForCompression(backup_dir);
+            if (Directory.Exists(res))
+            {
+                if (Directory.EnumerateFileSystemEntries(res).Any()) throw new InvalidOperationException("The directory is not empty.");
+            }
+
+            Utils.WriteOriginFile(TopParent, backup_dir);
+            Utils.Compress(Dirs, backup_dir, pass, aes_key_size, log);
+            return res;
+        }
+
+        public QualifiedPath GetDestinationDirForCompression(QualifiedPath new_root) => Utils.GetAbsolutePathInNewRoot(TopParent, new_root);
+
+        private void Initialize(QualifiedPath dir, ILog log)
+        {
+            TopParent = Dir.CreateFromPath(dir, IdGenerator.GenerateId(), out QualifiedPath located_in);
+            LocatedIn = located_in;
+            Dirs.Add(TopParent);
+            WriteDirTree(TopParent, new List<Match>(), log);
+            Parallel.ForEach(Files, file => file.WriteFileInfo());
+        }
+
+        public void MarkIgnored()
+        {
+            MarkIgnored(TopParent, new List<Match>());
         }
 
         private void MarkIgnored(Dir dir, List<Match> rules)
@@ -101,14 +150,12 @@ namespace QBackup
             }
 
             foreach (var file in dir.Files)
-            {
-                if (rules.Any(x => x.IsMatch(file))) file.IsIgnored = true;
-            }
+                if (rules.Any(x => x.IsMatch(file)))
+                    file.IsIgnored = true;
 
             foreach (var subdir in dir.Dirs)
-            {
-                if (rules.Any(x => x.IsMatch(subdir))) subdir.IsIgnored = true;
-            }
+                if (rules.Any(x => x.IsMatch(subdir)))
+                    subdir.IsIgnored = true;
 
             foreach (var subdir in dir.Dirs)
             {
@@ -117,32 +164,6 @@ namespace QBackup
                 new_rules.AddRange(rules.Where(x => x.Recursive));
                 MarkIgnored(subdir, new_rules);
             }
-        }
-
-        private void Initialize(QualifiedPath dir, ILog log)
-        {
-            TopParent = Dir.CreateFromPath(dir, IdGenerator.GenerateId(), out LocatedIn);
-            Dirs.Add(TopParent);
-            WriteDirTree(TopParent, new List<Match>(), log);
-            Parallel.ForEach(Files, file => file.WriteFileInfo());
-        }
-
-        public QualifiedPath GetDestinationDirForCompression(QualifiedPath new_root) => Utils.GetAbsolutePathInNewRoot(TopParent, new_root);
-
-        public QualifiedPath Compress(QualifiedPath backup_dir, string pass, int aes_key_size, ILog log)
-        {
-            log.WriteLine($"Compressing data in {Root.Path} into {backup_dir.Path}");
-            var res = GetDestinationDirForCompression(backup_dir);
-            if (Directory.Exists(res))
-            {
-                if (Directory.EnumerateFileSystemEntries(res).Any())
-                {
-                    throw new InvalidOperationException($"The directory is not empty.");
-                }
-            }
-            Utils.WriteOriginFile(TopParent, backup_dir);
-            Utils.Compress(Dirs, backup_dir, pass, aes_key_size, log);
-            return res;
         }
 
         private void WriteDirTree(Dir dir, List<Match> rules, ILog log)
@@ -163,6 +184,8 @@ namespace QBackup
                 WriteDirTree(subdir, new_rules, log);
             }
         }
+
+        #endregion
 
     }
 

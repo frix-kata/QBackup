@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using QBackup;
+using QBackup.Core;
 
 
 
@@ -10,7 +11,9 @@ namespace QBackupTests
 {
 
     
-
+    /// <summary>
+    /// Some custom assertions.
+    /// </summary>
     public static class QAssert 
     {
 

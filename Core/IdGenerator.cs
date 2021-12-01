@@ -2,11 +2,13 @@
 
 
 
-namespace QBackup
+namespace QBackup.Core
 {
 
     public static class IdGenerator
     {
+
+        #region Static
 
         private static int _id_counter;
 
@@ -15,6 +17,8 @@ namespace QBackup
         {
             return Interlocked.Increment(ref _id_counter);
         }
+
+        #endregion
 
     }
 

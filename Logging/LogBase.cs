@@ -3,43 +3,60 @@ using System.Linq;
 
 
 
-namespace QBackup
+namespace QBackup.Logging
 {
 
     /// <summary>
-    /// Base logger class.
+    ///     Base logger class.
     /// </summary>
     public abstract class LogBase : ILog
     {
 
+        #region Fields
+
         protected readonly object Lock = new object();
 
-        /// <inheritdoc />
-        public void WriteLine(string line)
-        {
-            lock (Lock)
-            {
-                if (_timer_running) line = $"{_sw.Elapsed:g} {line}";
-            }
-            WriteLineConcrete(line);
-        }
+        private Stopwatch _sw;
+
+        private bool _timer_running;
+
+        #endregion
+
+        #region Abstract
 
         protected abstract void WriteLineConcrete(string line);
 
         protected abstract void OverWriteLastLineConcrete(string line);
 
+        #endregion
+
+        #region Implementation of ILog
+
+        /// <inheritdoc />
+        public void WriteLine(string line)
+        {
+            WriteLine("", line);
+        }
+
         public void OverWriteLastLine(string line)
         {
             lock (Lock)
-            {
-                if (_timer_running) line = $"{_sw.Elapsed:g} {line}";
-            }
+                if (_timer_running)
+                    line = $"{_sw.Elapsed:g} {line}";
             OverWriteLastLineConcrete(line);
+        }
+
+        private void WriteLine(string prefix, string line)
+        {
+            lock (Lock)
+                if (_timer_running)
+                    line = $"{prefix}{_sw.Elapsed:g} {line}";
+            WriteLineConcrete(line);
         }
 
         public void WriteError(string line)
         {
-            WriteLine("ERROR: " + line);
+            WriteLine("ERROR: ", line);
         }
 
         public string[] GetErrors()
@@ -53,10 +70,6 @@ namespace QBackup
         /// <inheritdoc />
         public abstract void Reset();
 
-        private Stopwatch _sw;
-
-        private bool _timer_running;
-
         /// <inheritdoc />
         public void StartTimer()
         {
@@ -68,9 +81,9 @@ namespace QBackup
                     _sw.Start();
                 }
                 else _sw.Restart();
+
                 _timer_running = true;
             }
-            
         }
 
         /// <inheritdoc />
@@ -82,6 +95,8 @@ namespace QBackup
                 _timer_running = false;
             }
         }
+
+        #endregion
 
     }
 

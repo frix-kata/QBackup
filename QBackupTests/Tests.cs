@@ -5,6 +5,8 @@ using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using QBackup;
+using QBackup.Core;
+using QBackup.Logging;
 using File = System.IO.File;
 
 
@@ -12,8 +14,14 @@ using File = System.IO.File;
 namespace QBackupTests
 {
 
+    /// <summary>
+    /// Some integration tests for the utility.
+    /// </summary>
     public class Tests
     {
+        //todo tests won't clean up after themselves in case of failing assertions
+
+
         [SetUp]
         public void Setup()
         {
@@ -154,12 +162,12 @@ namespace QBackupTests
         /// Compress, extract and validate backups.
         /// </summary>
         /// <param name="src_dir"></param>
-        [TestCase(Input1)]
-        [TestCase(Input2)]
-        public static void TestArchivingAndExtraction(string src_dir)
+        public static void TestArchivingAndExtraction()
         {
             var log = new LogLines();
-            var src = AnalyzedBackup.Create(src_dir, true, log);
+            var t = new TestDir(InputDir);
+            t.Create();
+            var src = AnalyzedBackup.Create(t.Dirs[0], true, log);
             var archived_dir = src.Compress(OutputDir, Password, 256, log);
             var archived = ArchivedBackup.CreateFromPath(archived_dir, Password, log);
             QAssert.AreEqual(src, archived);
@@ -173,7 +181,7 @@ namespace QBackupTests
         }
 
         /// <summary>
-        /// Integration test to test how framework handles updating the backup,
+        /// Integration test to test how utility handles updating the backup,
         /// with files and dirs being deleted, added, moved, renamed, overwritten etc.
         /// </summary>
         [Test]
@@ -326,60 +334,10 @@ namespace QBackupTests
             }
         }
 
-        [TestCase(Input1, Output1)]
-        [TestCase(Input2, Output2)]
-        public static void TestArchivingSpeed(string dir, string output_dir)
-        {
-            var log = new LogConsole();
-            if (Directory.Exists(output_dir))
-            {
-                Directory.Delete(output_dir, true);
-            }
-            var sw = new Stopwatch();
-            sw.Start();
-            var t = AnalyzedBackup.Create(dir, true, log);
-            sw.Stop();
-            log.WriteLine($"Analyzed in {sw.ElapsedMilliseconds} ms");
-            log.WriteLine($"Found {t.FilesCount} files and {t.DirsCount} dirs");
-            var symlinks = t.Dirs.Where(x => x.IsLink).ToArray();
-            log.WriteLine($"Found {symlinks.Length} symlinks.");
-            t.Compress(OutputDir, Password, 256, log);
-        }
-
-        [TestCase(Input1)]
-        [TestCase(Input2)]
-        [TestCase(FastCloud)]
-        public static void TestAnalysisSpeed(string dir)
-        {
-            var log = new LogConsole();
-            var sw = new Stopwatch();
-            sw.Start();
-            var t = AnalyzedBackup.Create(dir, true, log);
-            sw.Stop();
-            log.WriteLine($"Analyzed in {sw.ElapsedMilliseconds} ms");
-            log.WriteLine($"Found {t.FilesCount} files and {t.DirsCount} dirs");
-            var symlinks = t.Dirs.Where(x => x.IsLink).ToArray();
-            log.WriteLine($"Found {symlinks.Length} symlinks.");
-        }
-
-
-        [TestCase(FastCloudArchived)]
-        [TestCase(Output1)]
-        [TestCase(Output2)]
-        public static void TestArchiveAnalyzeSpeed(string dir)
-        {
-            var log = new LogConsole();
-            log.WriteLine($"Opening {dir}");
-            var sw = new Stopwatch();
-            sw.Start();
-            var archived_backup = ArchivedBackup.CreateFromPath(dir, Password, log);
-            sw.Stop();
-            log.WriteLine($"Analyzed in {sw.ElapsedMilliseconds} ms.");
-            log.WriteLine($"Dirs: {archived_backup.ArchivedDirs.Count}, files: {archived_backup.ArchivedDirs.Count(x => !x.IsEmpty)}");
-        }
+        
 
         
-        [TestCase(Output1)]
+        /*[TestCase(Output1)]
         public static void TestSerialization(string dir)
         {
             var log = new LogLines();
@@ -410,7 +368,7 @@ namespace QBackupTests
             }
             log.WriteLine($"Ran assertions on deserialized data against generated data in {sw.ElapsedMilliseconds} ms");
             sw.Stop();
-        }
+        }*/
 
         [Test]
         public static void TestIntegrityCheck()
@@ -473,16 +431,14 @@ namespace QBackupTests
         }
 
 
+
+        //directories where tests are performed are meant to be created manually
         private const string InputDir = @"M:\qb test\src\";
         private const string ExtractedDir = @"M:\qb test\extracted\";
         private const string OutputDir = @"M:\qb test\dest\";
-        private const string Input1 = InputDir + "mod\\";
-        private const string Output1 = OutputDir + "mod\\";
-        private const string Input2 = InputDir + "mamos\\";
-        private const string Output2 = OutputDir + "mamos\\";
+
         private const string Password = "foo";
-        private const string FastCloud = @"C:\Fast Cloud\";
-        private const string FastCloudArchived = @"M:\Big Cloud\Fast Cloud\";
+
     }
 
 }

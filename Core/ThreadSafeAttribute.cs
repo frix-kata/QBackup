@@ -2,7 +2,7 @@
 
 
 
-namespace QBackup
+namespace QBackup.Core
 {
 
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor)]

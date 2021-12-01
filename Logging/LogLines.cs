@@ -2,21 +2,36 @@
 
 
 
-namespace QBackup
+namespace QBackup.Logging
 {
 
     public class LogLines : LogBase
     {
 
+        #region Fields
+
         private readonly List<string> _lines = new List<string>();
+
+        #endregion
+
+        #region Overrides
+
+        /// <inheritdoc />
+        public override string[] GetLog()
+        {
+            lock (Lock) return _lines.ToArray();
+        }
+
+        /// <inheritdoc />
+        public override void Reset()
+        {
+            lock (Lock) _lines.Clear();
+        }
 
         /// <inheritdoc />
         protected override void WriteLineConcrete(string line)
         {
-            lock (Lock)
-            {
-                _lines.Add(line);
-            }
+            lock (Lock) _lines.Add(line);
         }
 
         /// <inheritdoc />
@@ -29,23 +44,7 @@ namespace QBackup
             }*/
         }
 
-        /// <inheritdoc />
-        public override string[] GetLog()
-        {
-            lock (Lock)
-            {
-                return _lines.ToArray();
-            }
-        }
-
-        /// <inheritdoc />
-        public override void Reset()
-        {
-            lock (Lock)
-            {
-                _lines.Clear();
-            }
-        }
+        #endregion
 
     }
 

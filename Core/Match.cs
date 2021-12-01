@@ -2,17 +2,34 @@
 
 
 
-namespace QBackup
+namespace QBackup.Core
 {
 
-
+    /// <summary>
+    /// Represents a match pattern to be matched with file or directory.
+    /// </summary>
     public class Match
     {
+
+        #region Static
+
+        public const string MATCH_ABSOLUTE_PATH = "absolute path";
+
+        public const string MATCH_NAME = "name";
+        public const string MATCH_RELATIVE_PATH = "relative path";
+
+        #endregion
+
+        #region Fields
 
         public bool Recursive;
         public bool Regex;
         public string Type;
         public string Pattern;
+
+        #endregion
+
+        #region Methods
 
         public bool IsMatch(string s)
         {
@@ -20,20 +37,17 @@ namespace QBackup
             return s == Pattern;
         }
 
-        public const string MATCH_NAME = "name";
-        public const string MATCH_RELATIVE_PATH = "relative path";
-        public const string MATCH_ABSOLUTE_PATH = "absolute path";
-
 
         public bool IsMatch(File f)
         {
-            switch(Type)
+            switch (Type)
             {
                 case MATCH_NAME: return IsMatch(f.Name);
                 case MATCH_RELATIVE_PATH: return IsMatch(f.GetRelativePath());
                 case MATCH_ABSOLUTE_PATH: return IsMatch(f.GetAbsolutePath());
                 default:
-                    throw new InvalidOperationException($"Unrecognized {nameof(Type)} {Type} in {nameof(Match)}, expected 'name', 'relative path' or 'absolute path'");
+                    throw new InvalidOperationException(
+                        $"Unrecognized {nameof(Type)} {Type} in {nameof(Match)}, expected 'name', 'relative path' or 'absolute path'");
             }
         }
 
@@ -45,9 +59,12 @@ namespace QBackup
                 case "relative path": return IsMatch(d.RelativePath);
                 case "absolute path": return IsMatch(d.AbsolutePath);
                 default:
-                    throw new InvalidOperationException($"Unrecognized {nameof(Type)} {Type} in {nameof(Match)}, expected 'name', 'relative path' or 'absolute path'");
+                    throw new InvalidOperationException(
+                        $"Unrecognized {nameof(Type)} {Type} in {nameof(Match)}, expected 'name', 'relative path' or 'absolute path'");
             }
         }
+
+        #endregion
 
     }
 

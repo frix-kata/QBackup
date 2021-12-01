@@ -1,8 +1,10 @@
-﻿namespace QBackup
+﻿namespace QBackup.Logging
 {
 
     public interface ILog
     {
+
+        #region Abstract
 
         void WriteLine(string line);
 
@@ -19,6 +21,8 @@
         void StartTimer();
 
         void StopTimer();
+
+        #endregion
 
     }
 

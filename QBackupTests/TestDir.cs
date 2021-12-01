@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
 using QBackup;
+using QBackup.Core;
 using File = System.IO.File;
 
 
